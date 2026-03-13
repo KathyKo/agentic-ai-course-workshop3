@@ -1,0 +1,101 @@
+import os
+from dotenv import load_dotenv
+from langgraph.graph import StateGraph, START, END
+
+# Import Travel Agency components
+from state import State
+from nodes import (
+    human_node,
+    orchestrator_node,
+    concierge_node,
+    booking_node,
+    local_guide_node,
+    summarizer_node,
+    orchestrator_routing,
+    check_exit_condition
+)
+
+# Load environment variables (API Keys)
+load_dotenv(override=True)
+
+def build_travel_graph():
+    """
+    Builds the Travel Agency multi-agent graph.
+    """
+    builder = StateGraph(State)
+
+    # 1. Add all nodes
+    builder.add_node("human", human_node)
+    builder.add_node("orchestrator", orchestrator_node)
+    builder.add_node("concierge", concierge_node)
+    builder.add_node("booking_agent", booking_node)
+    builder.add_node("local_guide", local_guide_node)
+    builder.add_node("summarizer", summarizer_node)
+
+    # 2. Define edges (The flow)
+    builder.add_edge(START, "human")
+
+    # From human, check if user wants to quit or continue to orchestrator
+    builder.add_conditional_edges(
+        "human",
+        check_exit_condition,
+        {
+            "summarizer": "summarizer",
+            "orchestrator": "orchestrator"
+        }
+    )
+
+    # From orchestrator, route to the selected specialized agent
+    builder.add_conditional_edges(
+        "orchestrator",
+        orchestrator_routing,
+        {
+            "concierge": "concierge",
+            "booking_agent": "booking_agent",
+            "local_guide": "local_guide",
+            "summarizer": "summarizer"
+        }
+    )
+
+    # Specialized agents all return to human for next user input
+    builder.add_edge("concierge", "human")
+    builder.add_edge("booking_agent", "human")
+    builder.add_edge("local_guide", "human")
+
+    # Summarizer is the final step
+    builder.add_edge("summarizer", END)
+
+    return builder.compile()
+
+def main():
+    print("==========================================")
+    print("      LUXURY TRAVEL PLANNING AGENCY       ")
+    print("==========================================")
+    print("Welcome! Our team of experts is ready to help you plan your dream trip.")
+    print("Type 'exit' or 'done' whenever you are ready to finalize your itinerary.\n")
+
+    graph = build_travel_graph()
+
+    # Initial state
+    initial_state = State(
+        messages=[],
+        destination=None,
+        dates=None,
+        budget=None,
+        flight_options=None,
+        hotel_options=None,
+        final_itinerary=None,
+        next_agent=None,
+        is_complete=False
+    )
+
+    try:
+        # Start the graph interaction
+        graph.invoke(initial_state)
+    except KeyboardInterrupt:
+        print("\n\nSession ended. Happy travels!")
+    except Exception as e:
+        print(f"\nAn error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
