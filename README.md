@@ -50,13 +50,10 @@ This pattern keeps **capabilities explicit per agent** and makes it easy to reas
 Ensure you have Python installed. We recommend using **`uv`** or **`pip`**.
 
 ### 2. Environment Configuration
-Copy the `.env.example` file and rename it to `.env`:
-```sh
-cp .env.example .env
-```
 Fill in the following keys:
 - `OPENAI_API_KEY`: Your OpenAI API key.
 - `TAVILY_API_KEY`: Tavily search API Key (used for flights, hotels, attractions, and general web search).
+- `GOOGLE_API_KEY`,`GOOGLE_CSE_ID`: Optional, if using Google Search
 - `OPENWEATHER_API_KEY`: OpenWeatherMap API Key.
 
 ### 3. Install Dependencies
